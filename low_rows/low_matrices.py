@@ -181,7 +181,7 @@ def gen_giants(A, B, C, k):
         for b in B:
             for c in C:
                 if np.any(a) and np.any(b) and np.any(c):
-                    giant = create_giant(a, b, c, 3)
+                    giant = create_giant(a, b, c, k)
                     giants[count] = [a, b, c, giant]
                     count += 1
                 if count == max:
@@ -228,6 +228,7 @@ def border_check(arr, k):
   return row_flag
 
 def new_examples(giants, k, limit=None):
+    new_giants = {}
     count = 0
     for g in giants:
         if limit is not None and count >= limit:
@@ -238,5 +239,103 @@ def new_examples(giants, k, limit=None):
         if check_matrix(P) and check_matrix(Q):
             continue
         if border_check(target, k):
-            print(target)
+            new_giants[count] = [giants[g][0], giants[g][1], giants[g][2], target]
             count += 1
+    return new_giants
+
+def masking(arr, k):
+    arr[arr <= k] = 0
+    return arr
+
+def gen_giants_AB_var(A, B, k):
+    count = 0
+    max = 10000
+    c = np.zeros((k, k))
+    giants = {}
+    for a in A:
+        for b in B:
+            if np.any(a) and np.any(b):
+                giant = create_giant(a, b, c, k)
+                giants[count] = [a, b, c, giant]
+                count += 1
+            if count == max:
+                break
+        if count == max:
+            break
+    return giants
+
+def gen_giants_AC_var(A, C, k):
+    count = 0
+    max = 10000
+    giants = {}
+    b = np.zeros((k,k))
+    for a in A:
+        for c in C:
+            if np.any(a) and np.any(c):
+                giant = create_giant(a, b, c, k)
+                giants[count] = [a, b, c, giant]
+                count += 1
+            if count == max:
+                break
+        if count == max:
+            break
+    return giants
+
+def processing(target):
+    t_biword = biword(target)
+    P, Q = viennot_rsk(t_biword)
+    return P, Q
+
+def print_side_by_side(A, B, sep='   '):
+    for row_a, row_b in zip(A, B):
+        row_a_str = ' '.join(map(str, row_a))
+        row_b_str = ' '.join(map(str, row_b))
+        print(f"{row_a_str}{sep}{row_b_str}")
+
+def masked_examples(ab_giants, ac_giants, k, limit=None):
+    count = 0
+    # result = []
+    for ab, ac in zip(ab_giants, ac_giants):
+        if limit is not None and count >= limit:
+            break
+        target_ab = ab_giants[ab][-1]
+        target_ac = ac_giants[ac][-1]
+        a = ab_giants[ab][0]
+        b = ab_giants[ab][1]
+        c = ac_giants[ab][2]
+        print("M:")
+        print(create_giant(a, b, c, k))
+        P_ab, Q_ab = processing(target_ab)
+        P_ac, Q_ac = processing(target_ac)
+        print("P_ac")
+        print(P_ac)
+        print("Q_ab:")
+        print(Q_ab)
+        masked_P_ac = masking(P_ac, k)
+        masked_Q_ab = masking(Q_ab, k)
+        print_side_by_side(masked_P_ac, masked_Q_ab)
+        print()
+
+def search_masked_examples(ab_giants, ac_giants, k, limit=None):
+    count = 0
+    # result = []
+    for ab, ac in zip(ab_giants, ac_giants):
+        if limit is not None and count >= limit:
+            break
+        target_ab = ab_giants[ab][-1]
+        target_ac = ac_giants[ac][-1]
+        a = ab_giants[ab][0]
+        b = ab_giants[ab][1]
+        c = ac_giants[ab][2]
+
+        P_ab, Q_ab = processing(target_ab)
+        P_ac, Q_ac = processing(target_ac)
+
+        masked_P_ac = masking(P_ac, k)
+        masked_Q_ab = masking(Q_ab, k)
+
+        if masked_P_ac.shape == masked_Q_ab.shape:
+            if (masked_P_ac == masked_Q_ab).all():
+                print("Alert!!!")
+                print(create_giant(a, b, c, k))
+                print_side_by_side(masked_P_ac, masked_Q_ab)
