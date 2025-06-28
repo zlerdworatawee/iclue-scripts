@@ -7,12 +7,14 @@ from low_rows.low_matrices import (
     gen_giants_AC_var,
     masked_examples,
     search_masked_examples,
+    testing,
 )
 
 def ABC(k, limit=None):
     B = generateChunks(k)
     C = generateChunks(k)
     A = list(all_kxk_matrices(k))
+
     return A, B, C
 
 def filtered_ABC(k, limit=None):
@@ -57,5 +59,14 @@ def test_new_search(k, limit=None):
 
     search_masked_examples(ab_giants, ac_giants, k)
 
+def t(k, limit=None):
+    A, B, C = filtered_ABC(k, limit)
+
+    ab_giants = gen_giants_AB_var(A, B, k)
+    ac_giants = gen_giants_AC_var(A, C, k)
+
+    testing(ab_giants, ac_giants, k)
+
 if __name__ == "__main__":
-    test_old_search(3, 1000)
+    
+    t(2)

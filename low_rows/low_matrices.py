@@ -262,110 +262,107 @@ def processing(target):
 
 def print_side_by_side(A, B, sep=' | '):
     for row_a, row_b in zip(A, B):
+        if np.all(row_a == 0) and np.all(row_b == 0):
+            continue  
         row_a_str = ' '.join(map(str, row_a))
         row_b_str = ' '.join(map(str, row_b))
         print(f"{row_a_str}{sep}{row_b_str}")
 
+def print_nonzero_rows(arr):
+    for row in arr:
+        if np.all(row == 0):
+            continue  # skip all-zero rows
+        print(row)
+
 def masked_examples(ab_giants, ac_giants, k, limit=None):
     count = 0
-    for ab, ac in zip(ab_giants, ac_giants):
-        if limit is not None and count >= limit:
-            break
-        target_ab = ab_giants[ab][-1]
-        target_ac = ac_giants[ac][-1]
-        a = ab_giants[ab][0]
-        b = ab_giants[ab][1]
-        c = ac_giants[ab][2]
-        print("M:")
-        print(create_giant(a, b, c, k))
-        P_ab, Q_ab = processing(target_ab)
-        P_ac, Q_ac = processing(target_ac)
-        print("P_ac")
-        print(P_ac)
-        print("Q_ab:")
-        print(Q_ab)
-        masked_P_ac = masking(P_ac, k)
-        masked_Q_ab = masking(Q_ab, k)
-        print_side_by_side(masked_P_ac, masked_Q_ab)
-        print()
-
-def new_rsk_insert(tableau, num):
-    row = 0
-    to_insert = num
-
-    while True:
-        if row >= len(tableau):
-            tableau.append([to_insert])
-            break
-
-        for i, val in enumerate(tableau[row]):
-            if to_insert < val:
-                bumped = tableau[row][i]
-                tableau[row][i] = to_insert
-                to_insert = bumped
-                break
-        else:
-            tableau[row].append(to_insert)
-            break
-
-        row += 1
-
-def rsk_tableau_square(sequence):
-    tableau = []
-    for num in sequence:
-        new_rsk_insert(tableau, num)
-
-    num_rows = len(tableau)
-    num_cols = max(len(row) for row in tableau)
-    size = max(num_rows, num_cols)
-
-    square_array = np.zeros((size, size), dtype=int)
-
-    for i, row in enumerate(tableau):
-        for j, val in enumerate(row):
-            square_array[i][j] = val
-
-    return square_array
+#     for ab, ac in zip(ab_giants, ac_giants):
+#         if limit is not None and count >= limit:
+#             break
+#         target_ab = ab_giants[ab][-1]
+#         target_ac = ac_giants[ac][-1]
+#         a = ab_giants[ab][0]
+#         b = ab_giants[ab][1]
+#         c = ac_giants[ab][2]
+#         print("M:")
+#         print(create_giant(a, b, c, k))
+#         P_ab, Q_ab = processing(target_ab)
+#         P_ac, Q_ac = processing(target_ac)
+#         print("P_ac")
+#         print(P_ac)
+#         print("Q_ab:")
+#         print(Q_ab)
+#         masked_P_ac = masking(P_ac, k)
+#         masked_Q_ab = masking(Q_ab, k)
+#         print_side_by_side(masked_P_ac, masked_Q_ab)
+#         print()
 
 def search_masked_examples(ab_giants, ac_giants, k, limit=None):
     count = 0
-    for ab, ac in zip(ab_giants, ac_giants):
-        if limit is not None and count >= limit:
-            break
-        target_ab = ab_giants[ab][-1]
-        target_ac = ac_giants[ac][-1]
-        a = ab_giants[ab][0]
-        b = ab_giants[ab][1]
-        c = ac_giants[ab][2]
+    if len(ab_giants.keys()) == len(ac_giants.keys()):
+        for i in range(len(ab_giants.keys())):
+            if limit is not None and count >= limit:
+                break
+            target_ab = ab_giants[i][-1]
+            target_ac = ac_giants[i][-1]
+            a = ab_giants[i][0]
+            b = ab_giants[i][1]
+            c = ac_giants[i][2]
 
-        pq_ac = biword(target_ac)
-        pq_ab = biword(target_ab)
-        p_seq, _ = tuple_list(pq_ac)
-        _, q_seq = tuple_list(pq_ab)
-        p = rsk_tableau_square(p_seq)
-        q = rsk_tableau_square(q_seq)
-        masked_P_ac = masking(p, k)
-        masked_Q_ab = masking(q, k)
+            pq_ac = biword(target_ac)
+            pq_ab = biword(target_ab)
+            
+            p_ac, q_ac = viennot_rsk(pq_ac)
+            p_ab, q_ab = viennot_rsk(pq_ab)
 
-        og = create_giant(a, b, c, k)
-        bi = biword(og)
-        og_p, og_q = viennot_rsk(bi)
-        print("ABC0")
-        print(og)
-        print("P")
-        print(og_p)
-        print("Q")
-        print(og_q)
-        print("Masked Tableaus (P, Q)")
-        print_side_by_side(masked_P_ac, masked_Q_ab)
+            og = create_giant(a, b, c, k)
+            bi = biword(og)
+            og_p, og_q = viennot_rsk(bi)
+            print("ABC0")
+            print(og)
+            print("P")
+            print_nonzero_rows(og_p)
+            print("Q")
+            print_nonzero_rows(og_q)
+            p_ac = masking(p_ac, k)
+            q_ab = masking(q_ab, k)
+            print("Masked Tableaus (P, Q)")
+            print_side_by_side(p_ac, q_ab)
 
-        # if masked_P_ac.shape == masked_Q_ab.shape:
-        #     if (masked_P_ac == masked_Q_ab).all():
-        #         print("Alert!!!")
-        #         print(create_giant(a, b, c, k))
-        #         print(p)
-        #         print(q)
-        #         print_side_by_side(masked_P_ac, masked_Q_ab)
+def testing(ab_giants, ac_giants, k, limit=None):
+    count = 0
+    if len(ab_giants.keys()) == len(ac_giants.keys()):
+        for i in range(len(ab_giants.keys())):
+            if limit is not None and count >= limit:
+                break
+            target_ab = ab_giants[i][-1]
+            target_ac = ac_giants[i][-1]
+            a = ab_giants[i][0]
+            b = ab_giants[i][1]
+            c = ac_giants[i][2]
+
+            pq_ac = biword(target_ac)
+            pq_ab = biword(target_ab)
+            
+            p_ac, q_ac = viennot_rsk(pq_ac)
+            p_ab, q_ab = viennot_rsk(pq_ab)
+
+            og = create_giant(a, b, c, k)
+            bi = biword(og)
+            # og_p, og_q = viennot_rsk(bi)
+
+            p_ac = masking(p_ac, k)
+            q_ab = masking(q_ab, k)
+
+            if p_ac.shape == q_ab.shape:
+                if (p_ac == q_ab).all():
+                    print("ALERT")
+                    print(og)
+                    print(target_ab)
+                    print(target_ac)
+                    print_side_by_side(p_ac, q_ab)
+                    break
+
 
 def tuple_list(tuple_list):
     p = [t[0] for t in tuple_list]
@@ -373,22 +370,29 @@ def tuple_list(tuple_list):
     return p, q
 
 if __name__ == "__main__":
+    t = np.array([
+        [0, 0, 2, 0],
+        [0, 1, 0, 0],
+        [2, 0, 0, 0],
+        [0, 0, 0, 0]
+    ])
+
     test_Q = np.array([
         [0, 0, 2, 0],
         [0, 1, 0, 0],
         [0, 0, 0, 0],
         [0, 0, 0, 0]
     ])
+
     test_P = np.array([
         [0, 0, 0, 0],
         [0, 1, 0, 0],
         [2, 0, 0, 0],
         [0, 0, 0, 0]
     ])
-    biword_p = biword(test_Q)
-    print(type(biword_p))
-    p, q = tuple_list(biword_p)
-    p = rsk_tableau_square(p)
-    q = rsk_tableau_square(q)
-    print(p)
-    print(q)
+
+    biword1 = biword(test_Q)
+    biword2 = biword(test_P)
+
+    print(viennot_rsk(biword1)[1])
+    print(viennot_rsk(biword2)[0])
