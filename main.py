@@ -1,4 +1,13 @@
-from low_rows.low_matrices import generateChunks, all_kxk_matrices, new_examples, gen_giants, gen_giants_AB_var, gen_giants_AC_var, masked_examples, search_masked_examples
+from low_rows.low_matrices import (
+    generateChunks,
+    all_kxk_matrices,
+    new_examples,
+    gen_giants,
+    gen_giants_AB_var,
+    gen_giants_AC_var,
+    masked_examples,
+    search_masked_examples,
+)
 
 def ABC(k, limit=None):
     B = generateChunks(k)
@@ -9,7 +18,7 @@ def ABC(k, limit=None):
 def filtered_ABC(k, limit=None):
     A, B, C = ABC(k, limit)
     giants = gen_giants(A, B, C, k)
-    new_ex = new_examples(giants, k, limit) 
+    new_ex = new_examples(giants, k, limit)
 
     A = [v[0] for v in new_ex.values()]
     B = [v[1] for v in new_ex.values()]
@@ -33,7 +42,7 @@ def test_new_MPQ(k, limit=None):
     masked_examples(ab_giants, ac_giants, k, limit)
 
 def test_old_search(k, limit=None):
-    A, B, C = filtered_ABC(k, limit)
+    A, B, C = ABC(k, limit)
 
     ab_giants = gen_giants_AB_var(A, B, k)
     ac_giants = gen_giants_AC_var(A, C, k)
@@ -50,4 +59,3 @@ def test_new_search(k, limit=None):
 
 if __name__ == "__main__":
     test_old_search(3, 1000)
-
