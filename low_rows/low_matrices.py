@@ -156,6 +156,8 @@ def check_matrix(mat):
         vals.append(nz[0])
     return np.all(np.diff(vals) > 0)
 
+
+
 def gen_giants(A, B, C, k):
     count = 0
     max = 10000
@@ -192,16 +194,49 @@ def border_check(arr, k):
 
     for i in chain(range(0, k - 1), range(k, 2 * k - 1)):
         row_flag, _ = clean_brackets(arr[i], arr[i + 1])
+        
         if not row_flag:
             return False
 
     for j in chain(range(0, k - 1), range(k, 2 * k - 1)):
+        col_flag, _ = clean_brackets(arr[:, j], arr[:, j + 1])
+        
+        if not col_flag:
+            return False
+    return row_flag
+
+def original_check(arr, k):
+    row_flag = True
+    col_flag = True
+
+    for i in range(k):
+        row_flag, _ = clean_brackets(arr[i], arr[i + 1])
+        if not row_flag:
+            return False
+
+    for j in range(k):
         col_flag, _ = clean_brackets(arr[:, j], arr[:, j + 1])
         if not col_flag:
             return False
     return row_flag
 
 def new_examples(giants, k, limit=None):
+    new_giants = {}
+    count = 0
+    for g in giants:
+        if limit is not None and count >= limit:
+            break
+        target = giants[g][-1]
+        t_biword = biword(target)
+        P, Q = viennot_rsk(t_biword)
+        if check_matrix(P) and check_matrix(Q):
+            continue
+        if border_check(target, k):
+            new_giants[count] = [giants[g][0], giants[g][1], giants[g][2], target]
+            count += 1
+    return new_giants
+
+def filter(giants, k, limit=None):
     new_giants = {}
     count = 0
     for g in giants:
@@ -262,10 +297,8 @@ def processing(target):
 
 def print_side_by_side(A, B, sep=' | '):
     for row_a, row_b in zip(A, B):
-        if np.all(row_a == 0) and np.all(row_b == 0):
-            continue  
-        row_a_str = ' '.join(map(str, row_a))
-        row_b_str = ' '.join(map(str, row_b))
+        row_a_str = ' '.join(str(int(x)) for x in row_a)
+        row_b_str = ' '.join(str(int(x)) for x in row_b)
         print(f"{row_a_str}{sep}{row_b_str}")
 
 def print_nonzero_rows(arr):
@@ -299,6 +332,7 @@ def masked_examples(ab_giants, ac_giants, k, limit=None):
 
 def search_masked_examples(ab_giants, ac_giants, k, limit=None):
     count = 0
+    result = []
     if len(ab_giants.keys()) == len(ac_giants.keys()):
         for i in range(len(ab_giants.keys())):
             if limit is not None and count >= limit:
@@ -312,22 +346,16 @@ def search_masked_examples(ab_giants, ac_giants, k, limit=None):
             pq_ac = biword(target_ac)
             pq_ab = biword(target_ab)
             
-            p_ac, q_ac = viennot_rsk(pq_ac)
-            p_ab, q_ab = viennot_rsk(pq_ab)
+            p_ac, _ = viennot_rsk(pq_ac)
+            _, q_ab = viennot_rsk(pq_ab)
 
             og = create_giant(a, b, c, k)
-            bi = biword(og)
-            og_p, og_q = viennot_rsk(bi)
-            print("ABC0")
-            print(og)
-            print("P")
-            print_nonzero_rows(og_p)
-            print("Q")
-            print_nonzero_rows(og_q)
+
             p_ac = masking(p_ac, k)
             q_ab = masking(q_ab, k)
-            print("Masked Tableaus (P, Q)")
-            print_side_by_side(p_ac, q_ab)
+
+            result.append((p_ac, q_ab, og, p_ac, q_ab))
+    return result
 
 def testing(ab_giants, ac_giants, k, limit=None):
     count = 0
@@ -369,30 +397,116 @@ def tuple_list(tuple_list):
     q = [t[-1] for t in tuple_list]
     return p, q
 
+# if __name__ == "__main__":
+#     A = np.array([
+#         [0, 0, 0, 1],
+#         [0, 1, 1, 0],
+#         [0, 1, 0, 0],
+#         [1, 0, 0, 0]
+#     ])
+
+#     B = np.array([
+#         [0, 0, 0, 1],
+#         [1, 0, 1, 0],
+#         [0, 1, 0, 0],
+#         [1, 0, 0, 0]
+#     ])
+
+#     # Top-left 2x2 block: A_a
+#     A_a = A[:2, :2]
+#     B_a = B[:2, :2]
+
+#     # Top-right 2x2 block: A_b
+#     A_b = A[:2, 2:]
+#     B_b = B[:2, 2:]
+
+#     # Bottom-left 2x2 block: A_c
+#     A_c = A[2:, :2]
+#     B_c = B[2:, :2]
+
+#     print("A")
+#     A_ab = create_giant(A_a, A_b, np.zeros((2,2)), 2)
+#     A_ac = create_giant(A_a, np.zeros((2,2)), A_c, 2)
+
+#     bi_A_ab = biword(A_ab)
+#     bi_A_ac = biword(A_ac)
+
+#     p_ac_1, _ = viennot_rsk(bi_A_ac)
+#     _, q_ab_1 = viennot_rsk(bi_A_ab)
+
+#     print_side_by_side(p_ac_1, q_ab_1)
+
+#     print("B")
+#     B_ab = create_giant(B_a, B_b, np.zeros((2,2)), 2)
+#     B_ac = create_giant(B_a, np.zeros((2,2)), B_c, 2)
+
+#     bi_B_ab = biword(B_ab)
+#     bi_B_ac = biword(B_ac)
+
+#     p_ac_2, _ = viennot_rsk(bi_B_ac)
+#     _, q_ab_2 = viennot_rsk(bi_B_ab)
+
+#     print_side_by_side(p_ac_2, q_ab_2)
+
+def gen_ABC0_giants(A, B, C, k, max_count=10000):
+    """
+    Returns dictionary: {index: (A, B, C, giant, zero_block)}
+    where giant = [ A | B ]
+                  [ C | 0 ]
+    """
+    giants = {}
+    count = 0
+    zero_block = np.zeros((k, k), dtype=int)
+    for a in A:
+        for b in B:
+            for c in C:
+                if not (np.any(a) and np.any(b) and np.any(c)):
+                    continue
+                giant = create_giant(a, b, c, k)
+                giants[count] = (a, b, c, giant, zero_block)
+                count += 1
+                if count >= max_count:
+                    return giants
+    return giants
+
+
+def filter_ABC0_by_bracketing(giants_dict, k):
+    """
+    Filters giants that pass original_check and returns lists of (A, B), (A, C)
+    """
+    ab_list = []
+    ac_list = []
+    for _, (a, b, c, giant, _) in giants_dict.items():
+        if original_check(giant, k):
+            ab_list.append((a, b))
+            ac_list.append((a, c))
+    return ab_list, ac_list
+
+def filter_new_ABC0_by_bracketing(giants_dict, k):
+    """
+    Filters giants that pass original_check and returns lists of (A, B), (A, C)
+    """
+    ab_list = []
+    ac_list = []
+    for _, (a, b, c, giant, _) in giants_dict.items():
+        if border_check(giant, k):
+            ab_list.append((a, b))
+            ac_list.append((a, c))
+    return ab_list, ac_list
+
 if __name__ == "__main__":
-    t = np.array([
+    C = np.array([
+    [0, 0, 2, 0],
+    [0, 1, 0, 0],
+    [2, 1, 0, 0],
+    [1, 0, 0, 0]
+    ])
+
+    D = np.array([
         [0, 0, 2, 0],
         [0, 1, 0, 0],
-        [2, 0, 0, 0],
-        [0, 0, 0, 0]
+        [2, 1, 0, 0],
+        [1, 0, 0, 0]
     ])
 
-    test_Q = np.array([
-        [0, 0, 2, 0],
-        [0, 1, 0, 0],
-        [0, 0, 0, 0],
-        [0, 0, 0, 0]
-    ])
-
-    test_P = np.array([
-        [0, 0, 0, 0],
-        [0, 1, 0, 0],
-        [2, 0, 0, 0],
-        [0, 0, 0, 0]
-    ])
-
-    biword1 = biword(test_Q)
-    biword2 = biword(test_P)
-
-    print(viennot_rsk(biword1)[1])
-    print(viennot_rsk(biword2)[0])
+    border_check(C, 2)
