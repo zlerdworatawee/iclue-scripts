@@ -307,29 +307,6 @@ def print_nonzero_rows(arr):
             continue  # skip all-zero rows
         print(row)
 
-def masked_examples(ab_giants, ac_giants, k, limit=None):
-    count = 0
-#     for ab, ac in zip(ab_giants, ac_giants):
-#         if limit is not None and count >= limit:
-#             break
-#         target_ab = ab_giants[ab][-1]
-#         target_ac = ac_giants[ac][-1]
-#         a = ab_giants[ab][0]
-#         b = ab_giants[ab][1]
-#         c = ac_giants[ab][2]
-#         print("M:")
-#         print(create_giant(a, b, c, k))
-#         P_ab, Q_ab = processing(target_ab)
-#         P_ac, Q_ac = processing(target_ac)
-#         print("P_ac")
-#         print(P_ac)
-#         print("Q_ab:")
-#         print(Q_ab)
-#         masked_P_ac = masking(P_ac, k)
-#         masked_Q_ab = masking(Q_ab, k)
-#         print_side_by_side(masked_P_ac, masked_Q_ab)
-#         print()
-
 def search_masked_examples(ab_giants, ac_giants, k, limit=None):
     count = 0
     result = []
@@ -496,9 +473,9 @@ def filter_new_ABC0_by_bracketing(giants_dict, k):
 
 if __name__ == "__main__":
     C = np.array([
-    [0, 0, 2, 0],
-    [0, 1, 0, 0],
-    [2, 1, 0, 0],
+    [0, 0, 1, 0],
+    [0, 2, 0, 0],
+    [1, 0, 0, 0],
     [1, 0, 0, 0]
     ])
 
@@ -509,4 +486,4 @@ if __name__ == "__main__":
         [1, 0, 0, 0]
     ])
 
-    border_check(C, 2)
+    print(border_check(C, 2))
